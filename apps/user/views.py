@@ -24,4 +24,10 @@ class LoginView(APIView):
             login(request, user)
             return Response({'message': 'User logged in'}, 200)
         return Response({"User doesn't exist"}, 400)
+class LogoutView(APIView):
+
+    def post(self, request):
+        logout(request)
+        return Response({"Looged out successfully"}, 200)
+
 
