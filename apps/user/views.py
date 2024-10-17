@@ -2,15 +2,16 @@ from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
 
-from rest_framework import generics
+from rest_framework import generics, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from apps.user.serializers import UserProfileSerilaizer
+from apps.user.models import UserProfile
+from apps.user.serializers import UserProfileSerializer
 
 class RegisterView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserProfileSerilaizer
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
 
 class LoginView(APIView):
 
@@ -30,4 +31,8 @@ class LogoutView(APIView):
         logout(request)
         return Response({"Looged out successfully"}, 200)
 
+class UserProfileViewset(viewsets.ModelViewSet):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
 
+    # Decide if soft delete or hard

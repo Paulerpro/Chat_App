@@ -13,7 +13,7 @@ class BaseModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(choices=STATUS_CHOICES, blank=False, null=False, default='ACTIVE', max_length=100)
-    meta = models.JSONField(default=dict)
+    meta = models.JSONField(default=dict, blank=True, null=True)
 
     class Meta:
         abstract = True
