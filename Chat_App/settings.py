@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # apps
     'apps.user',
+    'apps.friendship',
 
     # external
     'rest_framework',

@@ -12,7 +12,9 @@ class BaseModel(models.Model):
     unique_id = models.UUIDField(max_length=36, default=uuid.uuid4, editable=False, unique=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(choices=STATUS_CHOICES, blank=False, null=False, default='ACTIVE', max_length=100)
+    status = models.CharField(
+        choices=STATUS_CHOICES, blank=False, null=False, default='ACTIVE', max_length=100
+        )
     meta = models.JSONField(default=dict, blank=True, null=True)
 
     class Meta:
