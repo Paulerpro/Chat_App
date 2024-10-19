@@ -5,13 +5,15 @@ from django.contrib.auth import login, logout, authenticate
 from rest_framework import generics, viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
 from apps.user.models import UserProfile
-from apps.user.serializers import UserProfileSerializer
+from apps.user.serializers import UserProfileSerializer, UserSerializer
 
 class RegisterView(generics.CreateAPIView):
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
 
 class LoginView(APIView):
 
