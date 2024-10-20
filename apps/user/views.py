@@ -16,6 +16,7 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         username = request.data.get("username")
@@ -31,7 +32,7 @@ class LogoutView(APIView):
 
     def post(self, request):
         logout(request)
-        return Response({"Looged out successfully"}, 200)
+        return Response({"Logged out successfully"}, 200)
 
 class UserProfileViewset(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all()

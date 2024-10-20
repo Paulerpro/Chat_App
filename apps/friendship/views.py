@@ -50,11 +50,13 @@ class FriendShipViewset(viewsets.ViewSet):
 
         try:
             request = self.queryset.filter(id=request_id).first()
-            print(request)
-            print("stat before", request.staus)
             request.status = action
+
+            # if action == "BLOCKED":
+            # terminate ongoing chats between users
+            #     pass
+
             request.save()
-            print(request.status)
             return Response({f"Instance successfully set to {action}"}, 200)
         except Exception as e:
             return Response({"message": f"{e}"}, 400)
