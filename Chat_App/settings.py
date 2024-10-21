@@ -78,7 +78,10 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'Chat_App.wsgi.application'
+# WSGI_APPLICATION = 'Chat_App.wsgi.application'
+
+# For Websocket extension
+ASGI_APPLICATION = 'Chat_App.asgi.application'
 
 
 # Database
