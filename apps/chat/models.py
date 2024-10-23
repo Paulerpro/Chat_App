@@ -5,6 +5,7 @@ from classes.base_model import BaseModel
 
 class ChatGroup(BaseModel):
     group_name = models.CharField(max_length=200, unique=True)
+    members = models.ManyToManyField(User, related_name="members_in_group", blank=True)
 
     def __str__(self):
         return self.group_name

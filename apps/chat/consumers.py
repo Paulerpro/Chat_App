@@ -42,6 +42,7 @@ class ChatRoomConsumer(WebsocketConsumer):
             "message": message
         }
 
+        # broadcast message to channels of the group
         async_to_sync(self.channel_layer.group_send)(
             self.room_name, event
         )
