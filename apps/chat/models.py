@@ -3,9 +3,16 @@ from django.contrib.auth.models import User
 
 from classes.base_model import BaseModel
 
+from apps.chat.managers import ChatGroupManager
+
+import shortuuid
+
 class ChatGroup(BaseModel):
-    group_name = models.CharField(max_length=200, unique=True)
+    group_name = models.CharField(max_length=200, unique=True, default=shortuuid.uuid())
+    admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     members = models.ManyToManyField(User, related_name="members_in_group", blank=True)
+
+    objects = ChatGroupManager()
 
     def __str__(self):
         return self.group_name

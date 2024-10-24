@@ -17,21 +17,30 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
 
     def get_serializer_class(self):
         if self.action in [
-            'get_group_messages',
+            'get_chat_messages',
             'send_group_message'
         ]:
             return GroupMessageSerializer
         if self.action in [
             "get_or_create_private_chat",
+            "create_group_chat",
+            "edit-groupchat",
+            "leave_chat_group"
         ]:
             return ChatGroupSerializer
         
     def get_queryset(self):
         if self.action in [
-            'get_group_messages',
+            'get_chat_messages',
             'send_group_message'
         ]:
             return GroupMessage.objects.all()
+        if self.action in [
+            'create_group_chat'
+            "edit-groupchat",
+            "leave_chat_group"
+        ]:
+            return ChatGroup.objects.all()
 
     @extend_schema(
         parameters=[
@@ -44,16 +53,23 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
             )
         ]
     )
-    @action(detail=False, methods=["get"], url_path="get-group-messages")
-    def get_group_messages(self, request):
-        group_name = request.GET.get("group_name", None)
-        try:
-            group = get_object_or_404(ChatGroup, group_name=group_name)
+    @action(detail=False, methods=["get"], url_path="get-chat-messages")
+    def get_chat_messages(self, request):
+        group_name = request.data.get("group_name", None)
+
+        group = self.get_queryset.get_group_chat(group_name)
+        
+        if group:
             queryset = group.group_messages.all()
+
+            # add user if not member. New member joins via link
+            if request.user not in group.members.all():
+                group.members.add(request.user)
+                group.save()
+
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data, 200)
-        except Exception as e:
-            return Response(f"{e}", 200)
+        return Response({"Gropu doesn't exist"}, 400)
     
     @extend_schema(
         request="",
@@ -76,9 +92,6 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
             return Response({"Message sent"}, 200)
         return Response(serializer.errors, 400)
     
-    # create group
-    # add group memebers
-
     # private chat (2 members only)
     @extend_schema(
         parameters=[
@@ -100,7 +113,7 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
         except Exception as e:
             return Response(f'{e}', 404)
 
-        # Query group containing exactly these two members
+        # Query group containing exactly the two private members
         private_room = ChatGroup.objects.filter(
             members__in=[other_member, request.user]
         ).annotate(
@@ -108,7 +121,6 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
         ).filter(num_members=2).first()
 
         if not private_room:
-            print("To be created")
             private_room = ChatGroup.objects.create(
                 group_name=f"{request.user.username} & {other_member.username} chat"
                 )
@@ -117,3 +129,57 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
         serializer = self.get_serializer(private_room, many=False)
 
         return Response(serializer.data, 200)
+    
+    # create group
+    @action(detail=False, methods=['post'], url_path="create-group-chat")
+    def create_group_chat(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(admin=request.user, memebers=[request.user])     
+            return Response({"Group created successfully"}, 200)   
+        return Response(serializer.errors, 400)
+    
+    # delete chat_group
+    @action(detail=False, methods=["delete"], url_path="delete-chat-group")
+    def delete_group_chat(self, request):
+        group_name = request.GET.get("group_name", None)
+        try:
+            group = get_object_or_404(ChatGroup, group_name=group_name)
+
+            if request.user != group.admin:
+                return Response({"Only admin can delete group"}, 400)
+            
+            group.delete()
+
+            return Response({"Group deleted successfully"}, 200)
+        except Exception as e:
+            return Response(f"{e}", 200)
+        
+    # edit chatgroup
+    @action(detail=False, methods=["put"], url_path="edit-groupchat")
+    def edit_groupchat(self, request):
+        group_name = request.data.get("group_name", None)
+
+        group = self.get_queryset.get_group_chat(group_name)
+
+        if group:
+            serializer = self.get_serializer(instance=group, data=request.data, partial=True)
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, 200)
+        return Response(serializer.errors, 400)
+    
+    # leave chatgroup
+    @action(detail=False, methods=["put"], url_path="leave-chat-group")
+    def leave_chat_group(self, request):
+        group_name = request.data.get("group_name", None)
+
+        group = self.get_queryset.get_group_chat(group_name)
+
+        if group:
+            group.members.remove(request.user)
+            group.save()
+            return Response({"user left group"}, 200)
+
+        return Response({"Group doesn't exist"}, 400)

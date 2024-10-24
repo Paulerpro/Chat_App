@@ -1,4 +1,5 @@
 from channels.generic.websocket import WebsocketConsumer
+from channels.auth import get_user
 
 from apps.chat.models import *
 
@@ -11,7 +12,9 @@ import json
 class ChatRoomConsumer(WebsocketConsumer):
 
     def connect(self):
-        self.user = self.scope['user']
+        # sending messages is difficult to test w/ postman as self.user should be auth_user which..
+        # requires prep-available sesson cookies pre-websocket connection.
+        self.user = async_to_sync(get_user)(self.scope['user'])
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.chatgroup = get_object_or_404(ChatGroup, group_name=self.room_name)
 
@@ -28,11 +31,11 @@ class ChatRoomConsumer(WebsocketConsumer):
         )
 
     def receive(self, text_data=None):
-        formatted_text_data = json.loads(text_data)
-        body = formatted_text_data['body']
+        # formatted_text_data = json.loads(text_data)
+        # body = formatted_text_data['body']
 
         message = GroupMessage.objects.create(
-            body=body,
+            body=text_data,
             author=self.user,
             group=self.chatgroup
         )
