@@ -12,6 +12,10 @@ from apps.chat.serializers import GroupMessageSerializer, ChatGroupSerializer
 
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
 
+from channels.layers import get_channel_layer
+
+from asgiref.sync import async_to_sync
+
 class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
     permission_classes = [AllowAny]
 
@@ -92,6 +96,41 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
             return Response({"Message sent"}, 200)
         return Response(serializer.errors, 400)
     
+    @action(detail=False, methods=["post"], url_path="send-file")
+    def send_file(self, request):
+        file = request.FILES.get("file", None)
+
+        group_name = request.data.get("group_name", None)
+
+        group = ChatGroup.objects.get_group_chat(group_name)
+
+        if group:
+            message = GroupMessage.objects.create(
+                author=request.user,
+                file=file,
+                group=group
+            )
+
+            serialized_message = {
+                "id": message.id,
+                "file": message.file,
+                "author": message.author.username,
+            }
+
+            channel_layer = get_channel_layer()
+
+            event = {
+                "type": "chat_message", # already defined in consumers.py
+                "message": serialized_message
+            }
+
+            async_to_sync(channel_layer.group_send)(
+                group_name, event
+            )
+
+            return Response({"file sent"}, 200)
+        return Response({"Group doesn't exist"}, 400)
+
     # private chat (2 members only)
     @extend_schema(
         parameters=[
@@ -183,3 +222,5 @@ class ChatViewset(viewsets.ViewSet, generics.GenericAPIView):
             return Response({"user left group"}, 200)
 
         return Response({"Group doesn't exist"}, 400)
+    
+    

@@ -21,9 +21,13 @@ class GroupMessage(BaseModel):
     group = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, related_name='group_messages')
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     body = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to="files/", blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.author.username} : {self.body[:28]}"
+        if self.body:
+            return f"{self.author.username} : {self.body[:28]}"
+        if self.file:
+            return f"{self.author.username} : {self.file}"
