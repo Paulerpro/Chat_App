@@ -4,6 +4,8 @@ from apps.user.models import UserProfile
 
 from django.contrib.auth.models import User
 
+from .tasks import send_confirmation_email
+
 class UserSerializer(serializers.ModelSerializer):
    class Meta:
       model = User
@@ -20,6 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
          user = super().create(validated_data)
 
          UserProfile.objects.create(user=user)
+
+         send_confirmation_email.delay()
 
          return user
 class UserProfileSerializer(serializers.ModelSerializer):
